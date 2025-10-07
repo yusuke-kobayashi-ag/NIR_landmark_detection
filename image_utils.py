@@ -1,9 +1,9 @@
-"""ファイル操作モジュール"""
+"""画像処理ユーティリティモジュール"""
 
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 
 def setup_directories(output_base_path: str, input_dir: str) -> Tuple[str, str, str]:
@@ -30,7 +30,8 @@ def visualize_comparison(
     original: np.ndarray,
     processed: np.ndarray,
     landmarks: List[np.ndarray],
-    save_path: str
+    save_path: str,
+    bounding_box: Optional[Tuple[int, int, int, int]] = None
 ) -> None:
     """オリジナル画像、処理済み画像、ランドマークを比較する画像を作成
     
@@ -39,27 +40,40 @@ def visualize_comparison(
         processed: 処理済み画像
         landmarks: ランドマークのリスト
         save_path: 保存先パス
+        bounding_box: バウンディングボックス (x, y, width, height) - 既に調整済み
     """
     plt.figure(figsize=(15, 5))
     
     # オリジナル画像
     plt.subplot(131)
     plt.imshow(original, cmap='gray')
+    if bounding_box:
+        x, y, w, h = bounding_box
+        rect = plt.Rectangle((x, y), w, h, linewidth=2, edgecolor='blue', facecolor='none')
+        plt.gca().add_patch(rect)
     plt.title('Original Image')
     plt.axis('off')
     
     # 処理後画像
     plt.subplot(132)
     plt.imshow(processed, cmap='gray')
+    if bounding_box:
+        x, y, w, h = bounding_box
+        rect = plt.Rectangle((x, y), w, h, linewidth=2, edgecolor='blue', facecolor='none')
+        plt.gca().add_patch(rect)
     plt.title('Processed Image')
     plt.axis('off')
     
     # ランドマーク付き画像
     plt.subplot(133)
     plt.imshow(processed, cmap='gray')
+    if bounding_box:
+        x, y, w, h = bounding_box
+        rect = plt.Rectangle((x, y), w, h, linewidth=2, edgecolor='blue', facecolor='none')
+        plt.gca().add_patch(rect)
     if len(landmarks) > 0:
         plt.plot(landmarks[0][:, 0], landmarks[0][:, 1], 'r.', markersize=2)
-    plt.title('Landmarks')
+    plt.title('Landmarks + Bounding Box')
     plt.axis('off')
     
     plt.tight_layout()
@@ -76,7 +90,8 @@ def save_processed_files(
     processed_dir: str,
     landmarks_dir: str,
     comparison_dir: str,
-    is_detected: bool
+    is_detected: bool,
+    bounding_box: Optional[Tuple[int, int, int, int]] = None
 ) -> None:
     """処理済みファイルを保存する
     
@@ -113,4 +128,4 @@ def save_processed_files(
         comparison_dir,
         f'{base_name}_comparison{suffix}.png'
     )
-    visualize_comparison(orig_norm, processed, [landmarks], comparison_path)
+    visualize_comparison(orig_norm, processed, [landmarks], comparison_path, bounding_box)

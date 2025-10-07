@@ -7,8 +7,8 @@ import sys
 class FolderListCreator:
     def __init__(self, root):
         self.root = root
-        self.root.title("フォルダリスト作成ツール")
-        self.root.geometry("800x600")
+        self.root.title("NIR画像ランドマーク検出ツール")
+        self.root.geometry("900x650")
         
         # フォルダリストを保持する変数
         self.folders = []
@@ -21,14 +21,31 @@ class FolderListCreator:
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        # フィルター設定フレーム
-        filter_frame = ttk.LabelFrame(main_frame, text="フォルダ名フィルター", padding="5")
-        filter_frame.grid(row=0, column=0, columnspan=2, pady=5, sticky=(tk.W, tk.E))
+        # 設定フレーム
+        settings_frame = ttk.LabelFrame(main_frame, text="設定", padding="5")
+        settings_frame.grid(row=0, column=0, columnspan=2, pady=5, sticky=(tk.W, tk.E))
         
-        # フィルター文字列の入力
+        # 検出モード選択
+        mode_frame = ttk.Frame(settings_frame)
+        mode_frame.pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Label(mode_frame, text="検出モード:").pack(side=tk.LEFT)
+        self.mode_var = tk.StringVar(value="normal")
+        mode_combo = ttk.Combobox(mode_frame, textvariable=self.mode_var, 
+                                 values=["normal", "high"], state="readonly", width=10)
+        mode_combo.pack(side=tk.LEFT, padx=5)
+        
+        # モード説明ラベル
+        mode_info = ttk.Label(mode_frame, text="(normal: 高速, high: 高精度)", 
+                             font=("TkDefaultFont", 8), foreground="gray")
+        mode_info.pack(side=tk.LEFT, padx=5)
+        
+        # フィルター設定
+        filter_frame = ttk.Frame(settings_frame)
+        filter_frame.pack(side=tk.LEFT, padx=20, pady=5)
+        ttk.Label(filter_frame, text="フォルダ名フィルター:").pack(side=tk.LEFT)
         self.filter_var = tk.StringVar()
-        filter_entry = ttk.Entry(filter_frame, textvariable=self.filter_var, width=80)
-        filter_entry.pack(side=tk.LEFT, padx=5, pady=5)
+        filter_entry = ttk.Entry(filter_frame, textvariable=self.filter_var, width=50)
+        filter_entry.pack(side=tk.LEFT, padx=5)
         ttk.Label(filter_frame, text="（カンマ区切りで複数指定可能）").pack(side=tk.LEFT, padx=5)
         
         # ボタンフレーム
@@ -142,7 +159,8 @@ class FolderListCreator:
                 self.root.destroy()
                 
                 # メインプログラムを実行
-                subprocess.run([sys.executable, main_script, '--list', file_path, '--mode', 'normal'], check=True)
+                selected_mode = self.mode_var.get()
+                subprocess.run([sys.executable, main_script, '--list', file_path, '--mode', selected_mode], check=True)
                 
             except subprocess.CalledProcessError as e:
                 messagebox.showerror("エラー", f"処理の実行中にエラーが発生しました: {str(e)}")
@@ -155,4 +173,4 @@ class FolderListCreator:
 if __name__ == "__main__":
     root = tk.Tk()
     app = FolderListCreator(root)
-    root.mainloop() 
+    root.mainloop()

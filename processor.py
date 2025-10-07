@@ -7,11 +7,11 @@ import numpy as np
 from typing import Tuple, Optional
 
 from config import Config
-from data_models import ProcessResult
+from data_types import ProcessResult
 from logger import LogManager
 from image_processor import preprocess_image
 from landmark_detector import detect_landmarks
-from file_handler import save_processed_files
+from image_utils import save_processed_files
 
 
 def process_image(
@@ -81,7 +81,8 @@ def process_image(
             processed_dir=processed_dir,
             landmarks_dir=landmarks_dir,
             comparison_dir=comparison_dir,
-            is_detected=detection_result.is_detected
+            is_detected=detection_result.is_detected,
+            bounding_box=detection_result.bounding_box
         )
         
         return ProcessResult(

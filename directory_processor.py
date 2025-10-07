@@ -10,8 +10,8 @@ from typing import List, Tuple, Optional
 
 from config import Config
 from logger import LogManager
-from data_models import DetectionInfo
-from file_handler import setup_directories, visualize_comparison
+from data_types import DetectionInfo
+from image_utils import setup_directories, visualize_comparison
 from processor import process_image_wrapper
 
 
@@ -59,7 +59,14 @@ def process_directory(input_dir: str, detection_mode: str = 'normal') -> None:
             for args in args_list
         }
         
-        for future in tqdm(as_completed(future_to_file), total=len(future_to_file), desc="処理中"):
+        # 進捗バーの設定
+        pbar = tqdm(total=len(future_to_file), desc="画像処理中", 
+                   bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]')
+        
+        success_count = 0
+        failure_count = 0
+        
+        for future in as_completed(future_to_file):
             img_file = future_to_file[future]
             base_filename = os.path.basename(img_file).replace('.npy', '')
             
@@ -68,7 +75,8 @@ def process_directory(input_dir: str, detection_mode: str = 'normal') -> None:
                 
                 if result.is_detected:
                     # 成功時
-                    tqdm.write(f"成功: {base_filename}")
+                    success_count += 1
+                    tqdm.write(f"✅ 成功: {base_filename}")
                     # 成功したランドマークを保存
                     landmarks_path = os.path.join(
                         landmarks_dir, f"{base_filename}_landmarks.npy"
@@ -77,7 +85,8 @@ def process_directory(input_dir: str, detection_mode: str = 'normal') -> None:
                         last_successful_landmarks = np.load(landmarks_path)
                 else:
                     # 失敗時
-                    tqdm.write(f"失敗: {base_filename} - {result.message}")
+                    failure_count += 1
+                    tqdm.write(f"❌ 失敗: {base_filename} - {result.message}")
                     not_detected.append((base_filename, result.message, result.detection_info))
                     
                     # 直前の成功したランドマークがある場合はそれを使用
@@ -98,7 +107,7 @@ def process_directory(input_dir: str, detection_mode: str = 'normal') -> None:
                             comparison_dir, f"{base_filename}_comparison_ng.png"
                         )
                         visualize_comparison(
-                            orig_norm, processed, [last_successful_landmarks], comparison_path
+                            orig_norm, processed, [last_successful_landmarks], comparison_path, None
                         )
                 
                 detection_results.append((
@@ -109,11 +118,23 @@ def process_directory(input_dir: str, detection_mode: str = 'normal') -> None:
                 
             except Exception as e:
                 # 処理自体の例外
+                failure_count += 1
                 error_msg = f"処理例外: {str(e)}"
-                tqdm.write(f"失敗: {base_filename} - {error_msg}")
+                tqdm.write(f"❌ エラー: {base_filename} - {error_msg}")
                 log_manager.log_error(error_msg)
                 not_detected.append((base_filename, error_msg, []))
                 detection_results.append((base_filename, None, False))
+            
+            # 進捗バーを更新
+            pbar.update(1)
+            pbar.set_postfix({
+                '成功': success_count, 
+                '失敗': failure_count,
+                '成功率': f"{success_count/(success_count+failure_count)*100:.1f}%" if (success_count+failure_count) > 0 else "0%"
+            })
+        
+        # 進捗バーを閉じる
+        pbar.close()
     
     # 検出結果をファイルに保存
     result_file = os.path.join(config.OUTPUT_BASE_DIR, 'detection_results.txt')
@@ -137,9 +158,23 @@ def process_directory(input_dir: str, detection_mode: str = 'normal') -> None:
     else:
         print("\nすべての画像で顔が検出されました！")
     
-    print(f"\n処理結果は以下のディレクトリに保存されました：")
-    print(f"- オリジナル正規化画像: {orignorm_dir}")
-    print(f"- 処理済み画像: {processed_dir}")
-    print(f"- ランドマーク: {landmarks_dir}")
-    print(f"- 比較画像: {os.path.join(os.path.dirname(orignorm_dir), 'comparisons')}")
-    print(f"- 検出結果: {result_file}")
+    # 最終結果の表示
+    total_processed = success_count + failure_count
+    success_rate = (success_count / total_processed * 100) if total_processed > 0 else 0
+    
+    print(f"\n{'='*60}")
+    print(f"🎯 処理完了サマリー")
+    print(f"{'='*60}")
+    print(f"📊 処理統計:")
+    print(f"   • 総処理数: {total_processed} ファイル")
+    print(f"   • 成功: {success_count} ファイル")
+    print(f"   • 失敗: {failure_count} ファイル")
+    print(f"   • 成功率: {success_rate:.1f}%")
+    print(f"")
+    print(f"📁 出力ディレクトリ:")
+    print(f"   • オリジナル正規化画像: {orignorm_dir}")
+    print(f"   • 処理済み画像: {processed_dir}")
+    print(f"   • ランドマーク: {landmarks_dir}")
+    print(f"   • 比較画像: {os.path.join(os.path.dirname(orignorm_dir), 'comparisons')}")
+    print(f"   • 検出結果: {result_file}")
+    print(f"{'='*60}")

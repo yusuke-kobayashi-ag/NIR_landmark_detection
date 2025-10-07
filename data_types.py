@@ -1,7 +1,7 @@
-"""データモデル定義モジュール"""
+"""データ型定義モジュール"""
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import numpy as np
 
 
@@ -19,6 +19,7 @@ class DetectionResult:
     best_upsample: Optional[int]
     detection_info: List[DetectionInfo]
     is_detected: bool
+    bounding_box: Optional[Tuple[int, int, int, int]] = None  # (x, y, width, height)
 
 
 @dataclass

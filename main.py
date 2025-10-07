@@ -3,7 +3,7 @@
 import os
 import argparse
 import tkinter as tk
-from create_folder_list import FolderListCreator
+from gui import FolderListCreator
 from directory_processor import process_directory
 
 
@@ -23,7 +23,7 @@ def main():
         '--mode',
         choices=['normal', 'high'],
         default='normal',
-        help='検出モード: normal (3回まで) または high (4回まで)'
+        help='検出モード: normal (0回) または high (0, 1, 2回)'
     )
     parser.add_argument(
         '--create-list',
