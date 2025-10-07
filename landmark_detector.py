@@ -39,7 +39,7 @@ def detect_landmarks(
     
     # モードに応じてアップサンプリング回数を設定
     if config.DETECTION_MODE == 'high':
-        upsample_times = [0, 1, 2]  # high mode: 0, 1, 2回
+        upsample_times = [1, 2]  # high mode: 1, 2回（必ずアップサンプリング）
     else:  # normal mode
         upsample_times = [0]  # normal mode: 0回のみ
     
